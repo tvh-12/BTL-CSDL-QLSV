@@ -144,6 +144,14 @@ function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const d = new Date(dateString);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${d.getFullYear()}`;
+  };
+
   return (
     <div className="app-container">
       <header className="header">
@@ -207,7 +215,7 @@ function App() {
                       <td><strong style={{ color: 'var(--primary)' }}>{student.MASV}</strong></td>
                       <td>{student.full_name}</td>
                       <td>{student.gender}</td>
-                      <td>{student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString('vi-VN') : 'N/A'}</td>
+                      <td>{formatDate(student.date_of_birth)}</td>
                       <td>{student.class_name}</td>
                       <td style={{ position: 'relative', minWidth: '160px' }} className="action-cell">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
