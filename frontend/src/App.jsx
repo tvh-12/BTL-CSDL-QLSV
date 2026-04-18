@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './index.css';
 
 function App() {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,7 @@ function App() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/students');
+      const res = await fetch(`${API_URL}/api/students`);
       if (res.ok) {
         const data = await res.json();
         setStudents(data);
@@ -50,7 +51,7 @@ function App() {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/classes');
+      const res = await fetch(`${API_URL}/api/classes`);
       if (res.ok) {
         const data = await res.json();
         setClasses(data);
@@ -103,8 +104,8 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const url = currentStudent 
-      ? `http://localhost:5000/api/students/${currentStudent.id}` 
-      : `http://localhost:5000/api/students`;
+      ? `${API_URL}/api/students/${currentStudent.id}` 
+      : `${API_URL}/api/students`;
     
     const method = currentStudent ? 'PUT' : 'POST';
 
@@ -129,7 +130,7 @@ function App() {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa sinh viên này?")) {
       try {
-        const res = await fetch(`http://localhost:5000/api/students/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/api/students/${id}`, { method: 'DELETE' });
         if (res.ok) {
           fetchStudents();
         }
