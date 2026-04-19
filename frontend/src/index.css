@@ -296,7 +296,7 @@ tr:last-child td {
   right: 40px;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--glass-bg);
+  background: #1e293b;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
