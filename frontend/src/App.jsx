@@ -155,7 +155,13 @@ function App() {
   return (
     <div className="app-container">
       <header className="header">
-        <h1>Quản Lý Sinh Viên</h1>
+        <h1 className="header-title">
+          <svg className="header-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+          </svg>
+          <span>Quản Lý Sinh Viên</span>
+        </h1>
         <button className="btn btn-primary" onClick={() => handleOpenModal()}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Thêm Sinh Viên
