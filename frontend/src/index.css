@@ -192,12 +192,25 @@ tr:last-child td {
   color: var(--text-light);
 }
 
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Filter Dropdown */
 .filter-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
   margin-top: 8px;
+  animation: dropdownSlide 0.2s ease-out;
+  transform-origin: top;
   background: rgba(30, 41, 59, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
