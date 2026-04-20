@@ -23,9 +23,9 @@
 
 body {
   background-color: var(--bg-color);
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15) 0%, transparent 50%);
+  background-image: url('/background.jpg');
+  background-size: cover;
+  background-position: center;
   background-attachment: fixed;
   color: var(--text-dark);
   min-height: 100vh;
