@@ -11,6 +11,8 @@ function App() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [grades, setGrades] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [statistics, setStatistics] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Filter states
@@ -38,6 +40,10 @@ function App() {
       fetchClasses();
     } else if (activeTab === 'grades') {
       fetchGrades();
+    } else if (activeTab === 'sections') {
+      fetchSections();
+    } else if (activeTab === 'statistics') {
+      fetchStatistics();
     }
 
     const handleClickOutside = (e) => {
@@ -83,15 +89,24 @@ function App() {
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/grades`);
-      if (res.ok) {
-        const data = await res.json();
-        setGrades(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch grades:", err);
-    } finally {
-      setLoading(false);
-    }
+      if (res.ok) setGrades(await res.json());
+    } catch (err) { console.error(err); } finally { setLoading(false); }
+  };
+
+  const fetchSections = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/sections`);
+      if (res.ok) setSections(await res.json());
+    } catch (err) { console.error(err); } finally { setLoading(false); }
+  };
+
+  const fetchStatistics = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/statistics`);
+      if (res.ok) setStatistics(await res.json());
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
   // --- FILTER LOGIC ---
@@ -236,6 +251,22 @@ function App() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
           Quản lý Điểm số
         </div>
+        
+        <div 
+          className={`nav-item ${activeTab === 'sections' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sections')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          Danh Sách Học Phần
+        </div>
+
+        <div 
+          className={`nav-item ${activeTab === 'statistics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('statistics')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Thống Kê Điểm (GPA)
+        </div>
       </aside>
 
       {/* MAIN CONTENT */}
@@ -255,7 +286,12 @@ function App() {
                 <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
             </button>
-            <span>{activeTab === 'students' ? 'Hồ Sơ Sinh Viên' : 'Bảng Điểm Môn Học'}</span>
+            <span>
+              {activeTab === 'students' && 'Hồ Sơ Sinh Viên'}
+              {activeTab === 'grades' && 'Bảng Điểm Môn Học'}
+              {activeTab === 'sections' && 'Danh Sách Học Phần'}
+              {activeTab === 'statistics' && 'Thống Kê Điểm Trung Bình'}
+            </span>
           </div>
           {activeTab === 'students' && (
             <button className="btn btn-primary" onClick={() => handleOpenModal()}>
@@ -384,8 +420,8 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      {grades.map(grade => (
-                        <tr key={grade.id}>
+                      {grades.map((grade, index) => (
+                        <tr key={grade.id || index}>
                           <td><strong style={{ color: 'var(--primary)' }}>{grade.student_code}</strong></td>
                           <td>{grade.full_name}</td>
                           <td>{grade.course_name}</td>
@@ -420,6 +456,97 @@ function App() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'sections' && (
+            <>
+              {loading ? (
+                <div className="loader">Đang tải danh sách học phần...</div>
+              ) : (
+                <div style={{ overflowX: 'auto', minHeight: '400px' }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Tên Học Phần</th>
+                        <th>Môn Học</th>
+                        <th>Tín chỉ</th>
+                        <th>Giảng Viên Phụ Trách</th>
+                        <th>Kỳ học</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sections.map((sec, index) => (
+                        <tr key={sec.section_id || index}>
+                          <td><strong style={{ color: 'var(--primary)' }}>{sec.section_name}</strong></td>
+                          <td>{sec.course_name}</td>
+                          <td><span style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>{sec.credits}</span></td>
+                          <td><strong style={{ color: '#00f2fe' }}>{sec.teacher_name}</strong></td>
+                          <td>{sec.semester_name} - {sec.year}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'statistics' && (
+            <>
+              {loading ? (
+                <div className="loader">Đang tải dữ liệu thống kê...</div>
+              ) : (
+                <div style={{ overflowX: 'auto', minHeight: '400px' }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Mã SV</th>
+                        <th>Họ và Tên</th>
+                        <th>Môn Học</th>
+                        <th>Điểm Trung Bình (GPA)</th>
+                        <th>Xếp Loại</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statistics.map((stat, index) => {
+                        let color = '';
+                        let text = '';
+                        let bg = '';
+                        if (stat.average_gpa >= 8.0) { color = '#10b981'; text = 'Giỏi'; bg = 'rgba(16, 185, 129, 0.1)'; }
+                        else if (stat.average_gpa >= 6.5) { color = '#3b82f6'; text = 'Khá'; bg = 'rgba(59, 130, 246, 0.1)'; }
+                        else if (stat.average_gpa >= 5.0) { color = '#f59e0b'; text = 'Trung Bình'; bg = 'rgba(245, 158, 11, 0.1)'; }
+                        else { color = '#ef4444'; text = 'Yếu'; bg = 'rgba(239, 68, 68, 0.1)'; }
+                        
+                        return (
+                          <tr key={index}>
+                            <td><strong style={{ color: 'var(--primary)' }}>{stat.student_code}</strong></td>
+                            <td>{stat.full_name}</td>
+                            <td>{stat.course_name}</td>
+                            <td>
+                              <strong style={{ fontSize: '18px', color: color }}>
+                                {stat.average_gpa}
+                              </strong>
+                            </td>
+                            <td>
+                              <span style={{
+                                background: bg,
+                                color: color,
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '13px',
+                                fontWeight: '700'
+                              }}>
+                                {text}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

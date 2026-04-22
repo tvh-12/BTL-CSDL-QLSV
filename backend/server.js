@@ -137,6 +137,37 @@ app.put('/api/grades/:id', async (req, res) => {
     }
 });
 
+// API: Get Course Sections
+app.get('/api/sections', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query('SELECT * FROM dbo.v_CourseSectionDetails');
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API: Get GPA Statistics
+app.get('/api/statistics', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(`
+            SELECT 
+                s.student_code,
+                s.full_name,
+                v.subject as course_name,
+                v.average_gpa
+            FROM dbo.vw_CompletedClassesView v
+            JOIN dbo.Students s ON v.student_id = s.student_id
+            ORDER BY s.student_code ASC
+        `);
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // API: Get Classes
 app.get('/api/classes', async (req, res) => {
     try {
