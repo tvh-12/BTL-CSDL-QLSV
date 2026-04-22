@@ -6,6 +6,7 @@ function App() {
   
   // Navigation State
   const [activeTab, setActiveTab] = useState('students');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -211,7 +212,7 @@ function App() {
   return (
     <div className="app-container">
       {/* SIDEBAR */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${isSidebarOpen ? '' : 'closed'}`}>
         <div className="sidebar-logo">
           <svg className="header-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
@@ -238,11 +239,17 @@ function App() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="main-content">
+      <main className="main-content" style={{ transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
         <header className="header">
-          <h1 className="header-title">
+          <div className="header-title">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', padding: '10px', borderRadius: '12px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px' }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
             <span>{activeTab === 'students' ? 'Hồ Sơ Sinh Viên' : 'Bảng Điểm Môn Học'}</span>
-          </h1>
+          </div>
           {activeTab === 'students' && (
             <button className="btn btn-primary" onClick={() => handleOpenModal()}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
