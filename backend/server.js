@@ -98,22 +98,22 @@ app.get('/api/grades', async (req, res) => {
         const pool = await poolPromise;
         const result = await pool.request().query(`
             SELECT 
-                sc.student_score_id as id,
-                s.student_code,
+                sc.id as id,
+                s.MASV as student_code,
                 s.full_name,
                 co.course_name,
                 cs.section_name,
                 sc.score,
-                sc.type_score,
+                'Cuối kỳ' as type_score,
                 se.semester_name,
                 se.year
             FROM dbo.Student_score sc
-            JOIN dbo.Enrollments e ON sc.enrollment_id = e.enrollment_id
-            JOIN dbo.Students s ON e.student_id = s.student_id
-            JOIN dbo.Course_section cs ON e.section_id = cs.section_id
-            JOIN dbo.Courses co ON cs.course_id = co.course_id
-            JOIN dbo.Semester se ON cs.semester_id = se.semester_id
-            ORDER BY s.student_code ASC
+            JOIN dbo.Enrollments e ON sc.enrollment_id = e.id
+            JOIN dbo.Students s ON e.student_id = s.id
+            JOIN dbo.Course_section cs ON e.section_id = cs.id
+            JOIN dbo.Courses co ON cs.course_id = co.id
+            JOIN dbo.Semester se ON cs.semester_id = se.id
+            ORDER BY s.MASV ASC
         `);
         res.json(result.recordset);
     } catch (err) {
@@ -128,9 +128,9 @@ app.put('/api/grades/:id', async (req, res) => {
         const { score } = req.body;
         const pool = await poolPromise;
         await pool.request()
-            .input('student_score_id', sql.Int, id)
+            .input('id', sql.Int, id)
             .input('new_score', sql.Decimal(4, 2), score)
-            .query('EXEC sp_UpdateStudentScore @student_score_id, @new_score');
+            .query('UPDATE Student_score SET score = @new_score WHERE id = @id');
         res.json({ message: 'Cập nhật điểm thành công!' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -141,7 +141,21 @@ app.put('/api/grades/:id', async (req, res) => {
 app.get('/api/sections', async (req, res) => {
     try {
         const pool = await poolPromise;
-        const result = await pool.request().query('SELECT * FROM dbo.v_CourseSectionDetails');
+        const result = await pool.request().query(`
+            SELECT 
+                cs.section_id,
+                cs.section_name,
+                c.course_name,
+                c.credits,
+                t.teacher_name,
+                se.semester_name,
+                se.year
+            FROM dbo.Course_section cs
+            JOIN dbo.Courses c ON cs.course_id = c.course_id
+            JOIN dbo.Teachers t ON cs.teacher_id = t.teacher_id
+            JOIN dbo.Semester se ON cs.semester_id = se.semester_id
+            ORDER BY se.year DESC, se.semester_name ASC
+        `);
         res.json(result.recordset);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -156,10 +170,17 @@ app.get('/api/statistics', async (req, res) => {
             SELECT 
                 s.student_code,
                 s.full_name,
-                v.subject as course_name,
-                v.average_gpa
-            FROM dbo.vw_CompletedClassesView v
-            JOIN dbo.Students s ON v.student_id = s.student_id
+                c.course_name,
+                CAST(AVG(sc.score) AS DECIMAL(4,2)) AS average_gpa
+            FROM dbo.Students s
+            JOIN dbo.Enrollments e ON s.student_id = e.student_id
+            JOIN dbo.Student_score sc ON e.enrollment_id = sc.enrollment_id
+            JOIN dbo.Course_section cs ON e.section_id = cs.section_id
+            JOIN dbo.Courses c ON cs.course_id = c.course_id
+            GROUP BY 
+                s.student_code,
+                s.full_name,
+                c.course_name
             ORDER BY s.student_code ASC
         `);
         res.json(result.recordset);
