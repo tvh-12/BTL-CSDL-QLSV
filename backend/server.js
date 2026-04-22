@@ -143,17 +143,17 @@ app.get('/api/sections', async (req, res) => {
         const pool = await poolPromise;
         const result = await pool.request().query(`
             SELECT 
-                cs.section_id,
+                cs.id as section_id,
                 cs.section_name,
                 c.course_name,
-                c.credits,
-                t.teacher_name,
+                3 as credits,
+                t.name as teacher_name,
                 se.semester_name,
                 se.year
             FROM dbo.Course_section cs
-            JOIN dbo.Courses c ON cs.course_id = c.course_id
-            JOIN dbo.Teachers t ON cs.teacher_id = t.teacher_id
-            JOIN dbo.Semester se ON cs.semester_id = se.semester_id
+            JOIN dbo.Courses c ON cs.course_id = c.id
+            JOIN dbo.Teachers t ON cs.teacher_id = t.id
+            JOIN dbo.Semester se ON cs.semester_id = se.id
             ORDER BY se.year DESC, se.semester_name ASC
         `);
         res.json(result.recordset);
@@ -168,20 +168,20 @@ app.get('/api/statistics', async (req, res) => {
         const pool = await poolPromise;
         const result = await pool.request().query(`
             SELECT 
-                s.student_code,
+                s.MASV as student_code,
                 s.full_name,
                 c.course_name,
                 CAST(AVG(sc.score) AS DECIMAL(4,2)) AS average_gpa
             FROM dbo.Students s
-            JOIN dbo.Enrollments e ON s.student_id = e.student_id
-            JOIN dbo.Student_score sc ON e.enrollment_id = sc.enrollment_id
-            JOIN dbo.Course_section cs ON e.section_id = cs.section_id
-            JOIN dbo.Courses c ON cs.course_id = c.course_id
+            JOIN dbo.Enrollments e ON s.id = e.student_id
+            JOIN dbo.Student_score sc ON e.id = sc.enrollment_id
+            JOIN dbo.Course_section cs ON e.section_id = cs.id
+            JOIN dbo.Courses c ON cs.course_id = c.id
             GROUP BY 
-                s.student_code,
+                s.MASV,
                 s.full_name,
                 c.course_name
-            ORDER BY s.student_code ASC
+            ORDER BY s.MASV ASC
         `);
         res.json(result.recordset);
     } catch (err) {
