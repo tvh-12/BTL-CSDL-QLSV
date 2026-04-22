@@ -92,6 +92,51 @@ app.delete('/api/students/:id', async (req, res) => {
     }
 });
 
+// API: Get Grades
+app.get('/api/grades', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(`
+            SELECT 
+                sc.student_score_id as id,
+                s.student_code,
+                s.full_name,
+                co.course_name,
+                cs.section_name,
+                sc.score,
+                sc.type_score,
+                se.semester_name,
+                se.year
+            FROM dbo.Student_score sc
+            JOIN dbo.Enrollments e ON sc.enrollment_id = e.enrollment_id
+            JOIN dbo.Students s ON e.student_id = s.student_id
+            JOIN dbo.Course_section cs ON e.section_id = cs.section_id
+            JOIN dbo.Courses co ON cs.course_id = co.course_id
+            JOIN dbo.Semester se ON cs.semester_id = se.semester_id
+            ORDER BY s.student_code ASC
+        `);
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API: Update Grade
+app.put('/api/grades/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { score } = req.body;
+        const pool = await poolPromise;
+        await pool.request()
+            .input('student_score_id', sql.Int, id)
+            .input('new_score', sql.Decimal(4, 2), score)
+            .query('EXEC sp_UpdateStudentScore @student_score_id, @new_score');
+        res.json({ message: 'Cập nhật điểm thành công!' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // API: Get Classes
 app.get('/api/classes', async (req, res) => {
     try {
