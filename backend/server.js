@@ -216,6 +216,76 @@ app.get('/api/classes', async (req, res) => {
     }
 });
 
+// API: Get all enrollments
+app.get('/api/enrollments', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(`
+            SELECT
+                e.enrollment_id,
+                s.student_code,
+                s.full_name as student_name,
+                cs.section_name,
+                c.course_name,
+                c.credits,
+                t.full_name as teacher_name,
+                se.semester_name,
+                se.year
+            FROM dbo.Enrollments e
+            JOIN dbo.Students s ON e.student_id = s.student_id
+            JOIN dbo.Course_section cs ON e.section_id = cs.section_id
+            JOIN dbo.Courses c ON cs.course_id = c.course_id
+            JOIN dbo.Teachers t ON cs.teacher_id = t.teacher_id
+            JOIN dbo.Semester se ON cs.semester_id = se.semester_id
+            ORDER BY se.year DESC, s.student_code ASC
+        `);
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API: Add enrollment
+app.post('/api/enrollments', async (req, res) => {
+    try {
+        const { student_id, section_id } = req.body;
+        const pool = await poolPromise;
+        // Check if already enrolled
+        const check = await pool.request()
+            .input('student_id', sql.Int, student_id)
+            .input('section_id', sql.Int, section_id)
+            .query('SELECT enrollment_id FROM Enrollments WHERE student_id=@student_id AND section_id=@section_id');
+        if (check.recordset.length > 0) {
+            return res.status(400).json({ error: 'Sinh viên đã đăng ký học phần này rồi!' });
+        }
+        await pool.request()
+            .input('student_id', sql.Int, student_id)
+            .input('section_id', sql.Int, section_id)
+            .query('INSERT INTO Enrollments (student_id, section_id) VALUES (@student_id, @section_id)');
+        res.status(201).json({ message: 'Đăng ký môn học thành công!' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API: Delete enrollment
+app.delete('/api/enrollments/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const pool = await poolPromise;
+        // Delete related scores first to avoid FK constraint
+        await pool.request()
+            .input('id', sql.Int, id)
+            .query('DELETE FROM Student_score WHERE enrollment_id = @id');
+        await pool.request()
+            .input('id', sql.Int, id)
+            .query('DELETE FROM Enrollments WHERE enrollment_id = @id');
+        res.json({ message: 'Huỷ đăng ký thành công!' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

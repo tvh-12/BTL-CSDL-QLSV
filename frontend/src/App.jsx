@@ -13,7 +13,13 @@ function App() {
   const [grades, setGrades] = useState([]);
   const [sections, setSections] = useState([]);
   const [statistics, setStatistics] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Enrollment modal
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const [enrollForm, setEnrollForm] = useState({ student_id: '', section_id: '' });
+
   
   // Filter states
   const [selectedDepartments, setSelectedDepartments] = useState([]);
@@ -50,6 +56,10 @@ function App() {
       fetchSections();
     } else if (activeTab === 'statistics') {
       fetchStatistics();
+    } else if (activeTab === 'enrollments') {
+      fetchEnrollments();
+      fetchStudents();
+      fetchSections();
     }
 
     const handleClickOutside = (e) => {
@@ -113,6 +123,42 @@ function App() {
       const res = await fetch(`${API_URL}/api/statistics`);
       if (res.ok) setStatistics(await res.json());
     } catch (err) { console.error(err); } finally { setLoading(false); }
+  };
+
+  const fetchEnrollments = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/enrollments`);
+      if (res.ok) setEnrollments(await res.json());
+    } catch (err) { console.error(err); } finally { setLoading(false); }
+  };
+
+  const handleEnrollSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_URL}/api/enrollments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_id: Number(enrollForm.student_id), section_id: Number(enrollForm.section_id) })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIsEnrollModalOpen(false);
+        setEnrollForm({ student_id: '', section_id: '' });
+        fetchEnrollments();
+      } else {
+        alert(data.error || 'Có lỗi xảy ra!');
+      }
+    } catch (err) { alert('Lỗi kết nối'); }
+  };
+
+  const handleUnenroll = async (id) => {
+    if (window.confirm('Huỷ đăng ký môn học này? Điểm số liên quan cũng sẽ bị xoá!')) {
+      try {
+        const res = await fetch(`${API_URL}/api/enrollments/${id}`, { method: 'DELETE' });
+        if (res.ok) fetchEnrollments();
+      } catch (err) { console.error(err); }
+    }
   };
 
   const handleSearch = async () => {
@@ -313,6 +359,14 @@ function App() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
           Thống Kê Điểm (GPA)
         </div>
+
+        <div 
+          className={`nav-item ${activeTab === 'enrollments' ? 'active' : ''}`}
+          onClick={() => setActiveTab('enrollments')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="16" x2="15" y2="16"></line></svg>
+          Đăng Ký Môn Học
+        </div>
       </aside>
 
       {/* MAIN CONTENT */}
@@ -337,12 +391,19 @@ function App() {
               {activeTab === 'grades' && 'Bảng Điểm Môn Học'}
               {activeTab === 'sections' && 'Danh Sách Học Phần'}
               {activeTab === 'statistics' && 'Thống Kê Điểm Trung Bình'}
+              {activeTab === 'enrollments' && 'Đăng Ký Môn Học'}
             </span>
           </div>
           {activeTab === 'students' && (
             <button className="btn btn-primary" onClick={() => handleOpenModal()}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Thêm Sinh Viên
+            </button>
+          )}
+          {activeTab === 'enrollments' && (
+            <button className="btn btn-primary" onClick={() => setIsEnrollModalOpen(true)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Thêm Đăng Ký
             </button>
           )}
         </header>
@@ -645,8 +706,98 @@ function App() {
               )}
             </>
           )}
+
+          {activeTab === 'enrollments' && (
+            <>
+              {loading ? (
+                <div className="loader">Đang tải danh sách đăng ký...</div>
+              ) : (
+                <div style={{ overflowX: 'auto', minHeight: '400px' }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Mã ĐK</th>
+                        <th>Mã SV</th>
+                        <th>Tên Sinh Viên</th>
+                        <th>Học Phần</th>
+                        <th>Môn Học</th>
+                        <th>Tín Chỉ</th>
+                        <th>Giảng Viên</th>
+                        <th>Kỳ Học</th>
+                        <th>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {enrollments.map((enr, index) => (
+                        <tr key={enr.enrollment_id || index}>
+                          <td>{enr.enrollment_id}</td>
+                          <td><strong style={{ color: 'var(--primary)' }}>{enr.student_code}</strong></td>
+                          <td>{enr.student_name}</td>
+                          <td>{enr.section_name}</td>
+                          <td>{enr.course_name}</td>
+                          <td>{enr.credits}</td>
+                          <td>{enr.teacher_name}</td>
+                          <td>{enr.semester_name} - {enr.year}</td>
+                          <td>
+                            <button className="btn-icon danger" onClick={() => handleUnenroll(enr.enrollment_id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '4px' }}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </main>
+
+      {/* Modal Đăng Ký Môn Học */}
+      {isEnrollModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <h2 style={{ marginBottom: '24px' }}>Đăng ký Môn học mới</h2>
+            <form onSubmit={handleEnrollSubmit}>
+              <div className="form-group full-width">
+                <label>Chọn Sinh viên</label>
+                <select 
+                  required 
+                  className="form-control" 
+                  value={enrollForm.student_id} 
+                  onChange={(e) => setEnrollForm({ ...enrollForm, student_id: e.target.value })}
+                >
+                  <option value="">-- Chọn sinh viên --</option>
+                  {students.map(s => (
+                    <option key={s.id} value={s.id}>{s.MASV} - {s.full_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group full-width" style={{ marginTop: '16px' }}>
+                <label>Chọn Học phần</label>
+                <select 
+                  required 
+                  className="form-control" 
+                  value={enrollForm.section_id} 
+                  onChange={(e) => setEnrollForm({ ...enrollForm, section_id: e.target.value })}
+                >
+                  <option value="">-- Chọn học phần --</option>
+                  {sections.map(sec => (
+                    <option key={sec.section_id} value={sec.section_id}>
+                      {sec.section_name} - {sec.course_name} ({sec.teacher_name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal-actions" style={{ marginTop: '32px' }}>
+                <button type="button" className="btn btn-outline" onClick={() => setIsEnrollModalOpen(false)}>Hủy bỏ</button>
+                <button type="submit" className="btn btn-primary">Xác nhận Đăng ký</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal Thêm/Sửa Sinh Viên */}
       {isModalOpen && (
