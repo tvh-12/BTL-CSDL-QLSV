@@ -6,7 +6,7 @@ function App() {
   
   // Navigation State
   const [activeTab, setActiveTab] = useState('students');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
