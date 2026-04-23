@@ -158,7 +158,7 @@ function App() {
       setFormData({
         full_name: student.full_name,
         MASV: student.MASV,
-        date_of_birth: student.date_of_birth ? student.date_of_birth.substring(0, 10) : '',
+        date_of_birth: student.date_of_birth ? isoToDisplay(student.date_of_birth.substring(0, 10)) : '',
         gender: student.gender,
         email: student.email,
         phone: student.phone,
@@ -186,7 +186,10 @@ function App() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          date_of_birth: displayToIso(formData.date_of_birth)
+        })
       });
       if (res.ok) {
         setIsModalOpen(false);
@@ -250,6 +253,21 @@ function App() {
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     return `${day}/${month}/${d.getFullYear()}`;
+  };
+
+  // Convert ISO (yyyy-mm-dd) → display (dd/mm/yyyy)
+  const isoToDisplay = (iso) => {
+    if (!iso) return '';
+    const [y, m, d] = iso.substring(0, 10).split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  // Convert display (dd/mm/yyyy) → ISO (yyyy-mm-dd) for backend
+  const displayToIso = (display) => {
+    if (!display || !display.includes('/')) return display;
+    const [d, m, y] = display.split('/');
+    if (!d || !m || !y) return display;
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
   };
 
   return (
@@ -647,7 +665,7 @@ function App() {
                 </div>
                 <div className="form-group">
                   <label>Ngày sinh</label>
-                  <input type="date" className="form-control" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} />
+                  <input type="text" className="form-control" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} placeholder="dd/mm/yyyy" maxLength={10} />
                 </div>
                 <div className="form-group">
                   <label>Giới tính</label>
