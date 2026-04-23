@@ -26,6 +26,12 @@ function App() {
     full_name: '', MASV: '', date_of_birth: '', gender: 'Nam', email: '', phone: '', class_id: ''
   });
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState('full_name'); // 'full_name' | 'student_code' | 'class_name'
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState(null); // null = not searched yet
+
   // Modal states (Grades)
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
   const [currentGrade, setCurrentGrade] = useState(null);
@@ -107,6 +113,28 @@ function App() {
       const res = await fetch(`${API_URL}/api/statistics`);
       if (res.ok) setStatistics(await res.json());
     } catch (err) { console.error(err); } finally { setLoading(false); }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    try {
+      setIsSearching(true);
+      const params = new URLSearchParams({ [searchType]: searchQuery.trim() });
+      const res = await fetch(`${API_URL}/api/students/search?${params}`);
+      if (res.ok) setSearchResults(await res.json());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSearchResults(null);
   };
 
   // --- FILTER LOGIC ---
@@ -304,7 +332,53 @@ function App() {
         <div className="glass-panel">
           {activeTab === 'students' && (
             <>
-              {loading ? (
+              {/* SEARCH BAR */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <select
+                  value={searchType}
+                  onChange={e => { setSearchType(e.target.value); setSearchResults(null); }}
+                  style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 14px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer', minWidth: '150px' }}
+                >
+                  <option value="full_name">Tìm theo Tên</option>
+                  <option value="student_code">Tìm theo Mã SV</option>
+                  <option value="class_name">Tìm theo Lớp</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder={searchType === 'full_name' ? 'Nhập họ tên...' : searchType === 'student_code' ? 'Nhập mã sinh viên...' : 'Nhập tên lớp...'}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                  style={{ flex: 1, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 16px', borderRadius: '10px', fontSize: '14px', outline: 'none', minWidth: '200px' }}
+                />
+                <button onClick={handleSearch} disabled={isSearching} className="btn btn-primary" style={{ padding: '10px 20px' }}>
+                  {isSearching ? 'Đang tìm...' : '🔍 Tìm kiếm'}
+                </button>
+                {searchResults !== null && (
+                  <button onClick={handleClearSearch} className="btn btn-outline" style={{ padding: '10px 16px' }}>✕ Xoá</button>
+                )}
+              </div>
+
+              {searchResults !== null ? (
+                <div style={{ overflowX: 'auto', minHeight: '300px' }}>
+                  <p style={{ marginBottom: '12px', color: 'var(--text-light)', fontSize: '14px' }}>
+                    Tìm thấy <strong style={{ color: 'var(--primary)' }}>{searchResults.length}</strong> kết quả
+                  </p>
+                  <table>
+                    <thead><tr><th>Mã SV</th><th>Họ và Tên</th><th>Giới tính</th><th>Lớp</th></tr></thead>
+                    <tbody>
+                      {searchResults.length > 0 ? searchResults.map((s, i) => (
+                        <tr key={i}>
+                          <td><strong style={{ color: 'var(--primary)' }}>{s.student_code}</strong></td>
+                          <td>{s.full_name}</td><td>{s.gender}</td><td>{s.class_name}</td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>Không tìm thấy sinh viên nào.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : loading ? (
                 <div className="loader">Đang tải dữ liệu...</div>
               ) : (
                 <div style={{ overflowX: 'auto', minHeight: '400px', paddingBottom: '100px' }}>

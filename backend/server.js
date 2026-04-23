@@ -189,6 +189,22 @@ app.get('/api/statistics', async (req, res) => {
     }
 });
 
+// API: Search Students (using sp_SearchStudents)
+app.get('/api/students/search', async (req, res) => {
+    try {
+        const { student_code, full_name, class_name } = req.query;
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .input('student_code', sql.NVarChar, student_code || null)
+            .input('full_name', sql.NVarChar, full_name || null)
+            .input('class_name', sql.NVarChar, class_name || null)
+            .query('EXEC sp_SearchStudents @student_code, @full_name, @class_name');
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // API: Get Classes
 app.get('/api/classes', async (req, res) => {
     try {
